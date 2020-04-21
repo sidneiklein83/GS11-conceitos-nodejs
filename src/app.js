@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { uuid } = require("uuidv4");
+const { uuid, isUuid } = require("uuidv4");
 
 const app = express();
 
@@ -8,6 +8,34 @@ app.use(express.json());
 app.use(cors());
 
 const repositories = [];
+//
+//**início dos middlewares**/
+//
+function logRequest(request, response, next) {
+  //Será disparado em todas as requisições...
+  const { method, url } = request;
+  const logLabel = `GS11-conceitos-nodejs | [${method.toUpperCase()}] ${url}`;
+  console.time(logLabel);
+  //console.log(logLabel);
+  //
+  //se não colocar este "return next()"", o middleware trava e não dá response
+  next(); //Aqui usamos next() sem return justamente para acessar console.timeEnd(logLabel);
+  console.timeEnd(logLabel);
+}
+app.use(logRequest); //Adicionei o middleware ao server
+
+function validateUUID(request, response, next) {
+  const { id } = request.params;
+  if (!isUuid(id)) {
+    return response.status(400).json({ error: 'O id informado é inválido!' })
+  } else {
+    return next();
+  }
+}
+app.use('/repositories/:id', validateUUID); //Posso passar o Middleware assim tbm!
+//
+//**fim dos middlewares**/
+//
 
 app.get("/repositories", (request, response) => {
   return response.json(repositories);
